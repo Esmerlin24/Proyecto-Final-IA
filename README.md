@@ -1,7 +1,7 @@
-# Proyecto-de-Final-IA
+# Proyecto-Final-IA
 
-## Nombre
+## Nombre: Esmerlin Severino Paredes
 
-## Matrícula
+## Matrícula: 24-EISN-2-033
 
-## Proyecto
+## Proyecto: Light Saving
