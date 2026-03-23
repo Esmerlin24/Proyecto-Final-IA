@@ -175,3 +175,16 @@ cython_debug/
 
 # Modelos de IA
 yolov8n.pt
+
+# Archivos generados por Gradio
+gradio/
+flagged/
+
+# Archivos de datos
+*.csv
+
+# Imágenes temporales
+*.png
+*.jpg
+*.jpeg
+*.webp
