@@ -18,7 +18,7 @@ def IniciarCamara(): # Funsion para iniciar la camara y procesar los frames
     
     ultimo_tiempo = time.time() # Variable para almacenar el ultimo tiempo que se detecto una persona 
     tiempo_limite = 5
-    camara = cv2.VideoCapture(0)
+    camara = cv2.VideoCapture(2)
 
 # Bucle para procesar cada frame de la camara 
     while corriendo:
