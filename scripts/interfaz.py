@@ -11,18 +11,52 @@ Modelo = YOLO("yolov8n.pt")
 
 # Variable global para controlar el estado de la camara 
 corriendo = False
+CamaraGlobal = None  # Para  almacenar la instancia de la camara seleccionada 
+TipoCamara = None  #  Para almacenar el tipo de camara seleccionada pc o iriun
+
+# Funsion para seleccionar la camara de la pc y actualizar el estado de la interfaz
+def UsarCamaraPC():
+    global TipoCamara
+    TipoCamara = "pc"
+    return None, "💻 Cámara de la PC seleccionada"
+# Funsion para seleccionar la camara de iriun y actualizar el estado de la interfaz
+def UsarCamaraIriun():
+    global TipoCamara
+    TipoCamara = "iriun"
+    return None, "📱 Cámara Iriun seleccionada"
 
 def IniciarCamara(): # Funsion para iniciar la camara y procesar los frames
-    global corriendo
+    global corriendo, CamaraGlobal, TipoCamara
     corriendo = True
+    
+    # selección manual de cámara
+    if TipoCamara == "pc":
+        CamaraGlobal = cv2.VideoCapture(0)
+
+    elif TipoCamara == "iriun":
+        for i in [1, 2, 3]:
+            cap = cv2.VideoCapture(i)
+            ret, frame = cap.read()
+            if ret:
+                print(f"Iriun detectada en indice: {i}")
+                CamaraGlobal = cap
+                break
+            cap.release()
+    
+    else:
+        yield None, "❌ Selecciona una cámara primero"
+        return
+
+    if CamaraGlobal is None:
+        yield None, "❌ Error: No se encontró la cámara"
+        return
     
     ultimo_tiempo = time.time() # Variable para almacenar el ultimo tiempo que se detecto una persona 
     tiempo_limite = 5
-    camara = cv2.VideoCapture(2)
 
 # Bucle para procesar cada frame de la camara 
     while corriendo:
-        ret, frame = camara.read()
+        ret, frame = CamaraGlobal.read()
         if not ret:
             break
 
@@ -54,12 +88,16 @@ def IniciarCamara(): # Funsion para iniciar la camara y procesar los frames
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         yield frame_rgb, estado
 
-    camara.release()
+    CamaraGlobal.release()
     yield None, "Cámara detenida"
 
 def detener_camara():
-    global corriendo
+    global corriendo, CamaraGlobal
     corriendo = False
+    
+    if CamaraGlobal is not None:
+        CamaraGlobal.release()
+    
     return None, "Cámara apagada"
 
 # CSS personalizado para mejorar la apariencia de la interfaz 
@@ -100,6 +138,8 @@ with gr.Blocks(css=custom_css) as interfaz:
     with gr.Row(): # Para organizar los botones en una fila 
         BotonInicio = gr.Button("▶ Iniciar Cámara", elem_classes=["btn-inicio"])
         BotonDetener = gr.Button("⏹ Detener Cámara", elem_classes=["btn-detener"])
+        BotonPC = gr.Button("💻 Usar Webcam")  
+        BotonIriun = gr.Button("📱 Usar Iriun")  
 
     ImagenSalida = gr.Image(label="Cámara en vivo")
     EstadoSalida = gr.Textbox(label="Estado del sistema")
@@ -112,6 +152,19 @@ with gr.Blocks(css=custom_css) as interfaz:
     
     BotonDetener.click( # boton para detener la camara y actualizar el estado 
         fn=detener_camara,
+        inputs=[],
+        outputs=[ImagenSalida, EstadoSalida]
+    )
+
+    # botones para seleccionar la camara y actualizar el estado de la interfaz 
+    BotonPC.click(
+        fn=UsarCamaraPC,
+        inputs=[],
+        outputs=[ImagenSalida, EstadoSalida]
+    )
+
+    BotonIriun.click(
+        fn=UsarCamaraIriun,
         inputs=[],
         outputs=[ImagenSalida, EstadoSalida]
     )
