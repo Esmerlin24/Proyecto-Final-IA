@@ -5,9 +5,14 @@ import cv2
 import gradio as gr # Importe gradio para la interfaz con el usuario 
 import time
 from ultralytics import YOLO
+import pygame  # Importe pygame para manejar el sonido de la musica de fondo 
 
 # Para Cargar el modelo
 Modelo = YOLO("yolov8n.pt")
+
+# Para inicializar el y cargar el sonido de fondo 
+pygame.mixer.init()
+pygame.mixer.music.load("sonido.mp3") 
 
 # Variable global para controlar el estado de la camara 
 corriendo = False
@@ -19,6 +24,7 @@ def UsarCamaraPC():
     global TipoCamara
     TipoCamara = "pc"
     return None, "💻 Cámara de la PC seleccionada"
+
 # Funsion para seleccionar la camara de iriun y actualizar el estado de la interfaz
 def UsarCamaraIriun():
     global TipoCamara
@@ -53,6 +59,7 @@ def IniciarCamara(): # Funsion para iniciar la camara y procesar los frames
     
     ultimo_tiempo = time.time() # Variable para almacenar el ultimo tiempo que se detecto una persona 
     tiempo_limite = 5
+    musica_sonando = False  # Variable para controlar si la musica esta sonando o no 
 
 # Bucle para procesar cada frame de la camara 
     while corriendo:
@@ -61,7 +68,7 @@ def IniciarCamara(): # Funsion para iniciar la camara y procesar los frames
             break
 
         resultados = Modelo(frame) # Para detectar objetos en el frame 
-        estado = "Habitación vacía"
+        estado = "Persona no detectada, música detenida"
         persona_detectada = False
 
         for r in resultados: # Para verificar cada estado de deteccion 
@@ -69,21 +76,34 @@ def IniciarCamara(): # Funsion para iniciar la camara y procesar los frames
                 clase = int(caja.cls[0])
                 if Modelo.names[clase] == "person":
                     persona_detectada = True
-                    estado = "Persona detectada"
+                    estado = "Música activa 🎶"
                     x1, y1, x2, y2 = map(int, caja.xyxy[0])
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
         tiempo_actual = time.time() # Para obtener el tiempo actual sin detectar personas 
+        
         if persona_detectada:
             ultimo_tiempo = tiempo_actual
+
+            # Para iniciar la musica si no esta sonando y se detecta una persona 
+            if not musica_sonando:
+                pygame.mixer.music.play(-1)
+                musica_sonando = True
+
         else:
             tiempo_pasado = int(tiempo_actual - ultimo_tiempo)
+
             if tiempo_pasado < tiempo_limite:
                 cuenta = tiempo_limite - tiempo_pasado
-               
-                estado = f"Apagando en: {cuenta} ⏳"
+                estado = f"Deteniendo música en: {cuenta} ⏳"
             else:
-                estado = "Luz apagada 💡❌ "
+                estado = "Persona no detectada, música detenida 🔇"
+
+            # Para detener la musica despues de 5 segundos
+            if tiempo_actual - ultimo_tiempo >= 5:
+                if musica_sonando:
+                    pygame.mixer.music.stop()
+                    musica_sonando = False
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         yield frame_rgb, estado
@@ -97,6 +117,8 @@ def detener_camara():
     
     if CamaraGlobal is not None:
         CamaraGlobal.release()
+    
+    pygame.mixer.music.stop()  # Para detener la musica al apagar la camara 
     
     return None, "Cámara apagada"
 
@@ -129,8 +151,8 @@ with gr.Blocks(css=custom_css) as interfaz:
     
     gr.Markdown( # Para mostrar el título de la aplicación
         """
-        # 💡 Light Saving
-        ### Sistema Inteligente de Detección de Personas
+        # Sistema Inteligente Para Negocios 🏪
+        ### Sistema Inteligente de Detección de Clientes en Tiempo Real
         #### Presiona el botón para iniciar la cámara
         """
     )
