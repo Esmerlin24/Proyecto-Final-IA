@@ -4,4 +4,4 @@
 
 ## Matrícula: 24-EISN-2-033
 
-## Proyecto: Light Saving
+## Proyecto: Sistema Inteligente Para Negocios
