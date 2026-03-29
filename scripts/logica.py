@@ -4,6 +4,7 @@
 from ultralytics import YOLO
 import cv2
 import time # Para medir el tiempo sin detectar personas 
+import pygame  # Para manejar la musica
 
 # Para cargar modelo
 Modelo = YOLO("yolov8n.pt")
@@ -11,10 +12,13 @@ Modelo = YOLO("yolov8n.pt")
 # Para activar la camara 
 Camara = cv2.VideoCapture(0)
 
+# Inicializar musica
+pygame.mixer.init()
+pygame.mixer.music.load("sonido.mp3")
 
 TiempoSinPersona = 0 # Variable para contar el tiempo sin detectar personas 
 TiempoInicio = None # Variable para almacenar el tiempo de inicio sin detectar personas 
-EstadoLuz = "APAGADA" # Variable para almacenar el estado de la luz 
+EstadoMusica = "DETENIDA" # Variable para almacenar el estado de la musica 
 
 while True: # Bucle para procesar cada frame de la camara 
     Ret, Frame = Camara.read()
@@ -42,12 +46,15 @@ while True: # Bucle para procesar cada frame de la camara
                 cv2.putText(Frame, "Persona", (X1, Y1-10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), 2)
 
-    # para controlar la luz dependiendo de si esta detectando persona o no 
+    # para controlar la musica dependiendo de si esta detectando persona o no 
     if PersonaDetectada:
-        print("Persona detectada → Luz encendida")
+        print("Persona detectada → Música activa")
 
-        EstadoLuz = "ENCENDIDA"
+        EstadoMusica = "ACTIVA"
         TiempoInicio = None  # reinicia contador
+
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play(-1)
 
     else: # si no se detecta persona 
         print("Sin persona → contando...")
@@ -57,10 +64,12 @@ while True: # Bucle para procesar cada frame de la camara
 
         TiempoSinPersona = time.time() - TiempoInicio # Para calcular el tiempo sin detectar personas
 
-        if TiempoSinPersona > 5: # Si han pasado mas de 5 segundos sin detectar personas, apagar la luz 
-            if EstadoLuz != "APAGADA":
-                print("Luz apagada")
-                EstadoLuz = "APAGADA"
+        if TiempoSinPersona > 5: # Si han pasado mas de 5 segundos sin detectar personas, detener la musica 
+            if EstadoMusica != "DETENIDA":
+                print("Persona no detectada → Música detenida")
+                EstadoMusica = "DETENIDA"
+
+                pygame.mixer.music.stop()
 
     #  Para Mostrar la cámara
     cv2.imshow("Sistema Inteligente", Frame)
